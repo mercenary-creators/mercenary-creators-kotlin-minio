@@ -9,14 +9,14 @@ Maven:
 ```xml
 <dependency>
   <groupId>co.mercenary-creators</groupId>
-  <artifactId>mercenary-creators-kotlin-json</artifactId>
+  <artifactId>mercenary-creators-kotlin-minio</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 Gradle:
 ```
 dependencies {
-    compile(group: 'co.mercenary-creators', name: 'mercenary-creators-kotlin-json', version: '1.0.0-SNAPSHOT')
+    compile(group: 'co.mercenary-creators', name: 'mercenary-creators-kotlin-minio', version: '1.0.0-SNAPSHOT')
 }
 ```
 
