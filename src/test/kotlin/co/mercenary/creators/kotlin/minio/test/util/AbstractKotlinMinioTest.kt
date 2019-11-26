@@ -24,7 +24,7 @@ abstract class AbstractKotlinMinioTest : AbstractKotlinTest() {
 
     override fun getConfigPropertiesBuilder(): () -> Properties = {
         Properties().also { prop ->
-            cachedContentResourceLoader["minio-test.properties"].toInputStream().use { prop.load(it) }
+            cachedContentResourceLoader["file:/opt/development/properties/minio/minio-test.properties"].toInputStream().use { prop.load(it) }
         }
     }
 
