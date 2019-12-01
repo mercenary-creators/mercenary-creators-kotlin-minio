@@ -150,15 +150,14 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
                             val base = norm.substring(0, look)
                             val file = norm.substring(look.inc())
                             if (exists(file, base)) {
-                                return try {
-                                    load[client.presignedGetObject(base, file)].toContentCache()
+                                 try {
+                                    return load[client.presignedGetObject(base, file)].toContentCache()
                                 }
                                 catch (cause: Throwable) {
                                     Throwables.thrown(cause)
                                     logger.error(cause) {
                                         "path = $path"
                                     }
-                                    null
                                 }
                             }
                         }

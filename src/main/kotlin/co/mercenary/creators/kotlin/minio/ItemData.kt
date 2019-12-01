@@ -17,7 +17,7 @@
 package co.mercenary.creators.kotlin.minio
 
 import co.mercenary.creators.kotlin.util.*
-import co.mercenary.creators.kotlin.util.io.InputStreamSupplier
+import co.mercenary.creators.kotlin.util.io.*
 import com.fasterxml.jackson.annotation.*
 import java.util.*
 
@@ -25,7 +25,7 @@ import java.util.*
 data class ItemData(val name: String, val bucket: String, val etag: String?, val storageClass: String?, val file: Boolean, val contentSize: Long, val lastModified: Date?, private val operations: MinioOperations) : MinioDataAware<ItemData>, InputStreamSupplier {
 
     @JsonIgnore
-    override fun getInputStream() = if (file) operations.stream(name, bucket) else ByteArray(0).inputStream()
+    override fun getInputStream() = if (file) operations.stream(name, bucket) else EmptyInputStream
 
     fun meta() = if (file) operations.meta(name, bucket) else MetaData()
 
