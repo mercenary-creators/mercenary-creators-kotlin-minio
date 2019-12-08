@@ -23,7 +23,7 @@ import java.nio.file.Path
 
 interface MinioOperations {
     fun traced(data: OutputStream? = System.out)
-    fun loader(name: String = "minio:"): Boolean
+    fun register(prefix: String = "minio:"): Boolean
     fun exists(bucket: String): Boolean
     fun create(bucket: String): Boolean
     fun buckets(): Sequence<BucketData>
@@ -36,8 +36,7 @@ interface MinioOperations {
     fun delete(name: String, bucket: String): Boolean
     fun delete(args:  Iterable<String>, bucket: String): Boolean
     fun delete(args:  Sequence<String>, bucket: String): Boolean = delete(args.toList(), bucket)
-    fun items(bucket: String, prefix: String? = null, recursive: Boolean = false): Sequence<ItemData>
-    fun head(name: String, bucket: String): HeadData
+    fun items(bucket: String, recursive: Boolean = false, prefix: String? = null): Sequence<ItemData>
     fun stat(name: String, bucket: String): StatusData
     fun stream(name: String, bucket: String): InputStream
     fun meta(name: String, bucket: String): MetaData

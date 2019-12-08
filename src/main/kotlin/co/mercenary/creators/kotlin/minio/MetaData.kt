@@ -16,39 +16,28 @@
 
 package co.mercenary.creators.kotlin.minio
 
-import co.mercenary.creators.kotlin.json.base.JSONStatic
+import com.fasterxml.jackson.annotation.JsonInclude
 
-class MetaData : MinioDataAware<MetaData> {
-    constructor(data: HeadData) {
-        data?.keys?.forEach { meta ->
-            if (test(meta)) {
-                val list = data[meta]
-                if (!list.isNullOrEmpty()) {
-                    hash[meta.toLowerCase()] = list[0]
-                }
-            }
-        }
-    }
+@JsonInclude(JsonInclude.Include.NON_NULL)
+class MetaData private constructor(private val hash: LinkedHashMap<String, String>) : MinioDataAware<MetaData>, Map<String, String> by hash {
 
-    constructor(vararg args: Pair<String, Any>) {
+    constructor(args: Map<String, Any>) : this(LinkedHashMap(args.size)) {
         for ((k, v) in args) {
-            hash[meta(k)] = v.toString()
+            hash[meta(k)] = code(v)
         }
     }
 
-    private val hash = LinkedHashMap<String, String>()
+    constructor(vararg args: Pair<String, Any>) : this(LinkedHashMap(args.size)) {
+        for ((k, v) in args) {
+            hash[meta(k)] = code(v)
+        }
+    }
 
-    fun toHash(): Map<String, String> = hash.toMap()
-
-    operator fun plus(data: MetaData) = hash.putAll(data.hash).let { this }
+    operator fun plus(data: MetaData) = MetaData(LinkedHashMap(hash + data.hash))
 
     override fun toString() = toJSONString()
 
-    override fun toByteArray() = JSONStatic.toByteArray(hash)
-
-    override fun toJSONString(pretty: Boolean) = JSONStatic.toJSONString(hash, pretty)
-
-    override fun equals(other: Any?) = when(other) {
+    override fun equals(other: Any?) = when (other) {
         is MetaData -> other.hash == hash
         else -> false
     }
@@ -56,10 +45,34 @@ class MetaData : MinioDataAware<MetaData> {
     override fun hashCode() = hash.hashCode()
 
     operator fun set(k: String, v: Any) {
-        hash[meta(k)] = v.toString()
+        hash[meta(k)] = code(v)
     }
 
+    override fun clone() = copyOf()
+
+    override fun copyOf() = MetaData(LinkedHashMap(hash))
+
     companion object {
+
+        @JvmStatic
+        fun nake(args: Map<String, List<String>>?): Map<String, String> {
+            if (args.isNullOrEmpty()) {
+                return emptyMap()
+            }
+            return LinkedHashMap<String, String>(args.size).also { hash ->
+                for ((k, v) in args) {
+                    if (test(k)) {
+                        if (!v.isNullOrEmpty()) {
+                            hash[meta(k)] = code(v[0])
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun code(data: Any): String {
+            return data.toString()
+        }
 
         private fun meta(meta: String): String {
             return if (test(meta)) meta.toLowerCase() else X_AMAZON_META_HEADER_START.plus(meta).toLowerCase()
@@ -67,4 +80,6 @@ class MetaData : MinioDataAware<MetaData> {
 
         private fun test(meta: String) = meta.toLowerCase().regionMatches(0, X_AMAZON_META_HEADER_START, 0, X_AMAZON_META_HEADER_START.length)
     }
+
+
 }

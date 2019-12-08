@@ -33,7 +33,7 @@ class MetaTest : KotlinTest() {
         var many = 0
         minio.items("root").forEach { each ->
             val meta = each.meta()
-            if (meta.toHash().isNotEmpty()) {
+            if (meta.isNotEmpty()) {
                 info { each.stat() }
                 info { meta }
                 many++

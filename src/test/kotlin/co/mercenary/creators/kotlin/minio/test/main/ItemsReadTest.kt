@@ -16,6 +16,8 @@
 
 package co.mercenary.creators.kotlin.minio.test.main
 
+
+import co.mercenary.creators.kotlin.util.*
 import co.mercenary.creators.kotlin.minio.*
 import org.junit.jupiter.api.Test
 
@@ -23,10 +25,14 @@ class ItemsReadTest : KotlinTest() {
     @Test
     fun test() {
         var many = 0
-        minio.items("root").forEach { each ->
+        minio.items("root").forEach { data ->
             info { many }
-            info { each }
-            info { each.text() }
+            info { data }
+            if (data.file) {
+                data.forEachLineIndexed { size, each ->
+                    info { "%2d : %s".format(size + 1, each) }
+                }
+            }
             many++
         }
         info { many }

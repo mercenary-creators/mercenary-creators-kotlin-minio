@@ -114,6 +114,11 @@ repositories {
 
 dependencies {
     compile(group: 'co.mercenary-creators', name: 'mercenary-creators-kotlin-json', version: MERCENARY_CREATORS_JSON_VERSION)
+    compile group: 'com.google.guava', name: 'guava', version: '28.1-jre'
+    compile group: 'com.google.http-client', name: 'google-http-client-xml', version: '1.33.0'
+    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.2.2'
+    compile group: 'com.squareup.okio', name: 'okio', version: '2.4.1'
+    compile group: 'joda-time', name: 'joda-time', version: '2.10.5'
     compile(group: 'io.minio', name: 'minio', version: '6.0.11')
     compile(group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: JACKSON_DATA_BIND_VERSION)
     compile(group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: JACKSON_DATA_BIND_VERSION)

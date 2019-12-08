@@ -22,6 +22,8 @@ const val X_AMAZON_REGION_USA_EAST_1 = "us-east-1"
 
 const val X_AMAZON_META_HEADER_START = "x-amz-meta-"
 
-internal typealias HeadData = Map<String, List<String>>?
+fun ItemData.stat() = if (file) operations.stat(name, bucket) else StatusData(name, bucket)
+
+fun ItemData.meta() = if (file) operations.meta(name, bucket) else MetaData()
 
 

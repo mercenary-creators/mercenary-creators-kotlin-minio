@@ -16,33 +16,27 @@
 
 package co.mercenary.creators.kotlin.minio.test.main
 
-import co.mercenary.creators.kotlin.minio.KotlinTest
+import co.mercenary.creators.kotlin.minio.*
 import co.mercenary.creators.kotlin.util.*
 import org.junit.jupiter.api.Test
 
 class ItemsTest : KotlinTest() {
     @Test
     fun test() {
-        var many = 0
+        val many = 0.toAtomic()
         minio.items("root").forEach { each ->
             info { many }
             info { each }
             info { each.stat() }
-            many++
+            many.getAndIncrement()
         }
         info { many }
-        many.shouldNotBe(0) {
-            "many should not be 0 but ($many)"
-        }
-        val flag = minio.loader()
+        val flag = minio.register()
         info { flag }
-        val data = contentResourceLoader["minio://root/test.json"]
-        info { data.getContentSize() }
+        val data = loader["minio://root/test.json"]
+        info { data }
         data.forEachLineIndexed { size, each ->
             info { "%2d : %s".format(size + 1, each) }
         }
-        minio.traced()
-        warn { minio.stat("xxx/", "root") }
-        warn { minio.stat("xxx/test.json", "root") }
     }
 }

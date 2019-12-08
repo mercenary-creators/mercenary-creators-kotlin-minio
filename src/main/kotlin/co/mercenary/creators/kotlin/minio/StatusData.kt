@@ -17,14 +17,29 @@
 package co.mercenary.creators.kotlin.minio
 
 import co.mercenary.creators.kotlin.util.*
-import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.annotation.JsonInclude
 import java.util.*
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class StatusData(val name: String, val bucket: String, val etag: String?, val file: Boolean, val contentSize: Long, val creationTime: Date?, @JsonInclude(JsonInclude.Include.NON_EMPTY) val metaData: Map<String, String>, private val type: String) : MinioDataAware<StatusData> {
+class StatusData @JvmOverloads constructor(val name: String, val bucket: String, val etag: String? = null, val file: Boolean = false, val contentSize: Long? = null, val creationTime: Date? = null, @JsonInclude(JsonInclude.Include.NON_EMPTY) val metaData: Map<String, String> = emptyMap(), private val type: String = DEFAULT_CONTENT_TYPE) : MinioDataAware<StatusData> {
+
+    private val self: ByteArray by lazy {
+        toByteArray()
+    }
 
     val contentType: String
         get() = if (file) if (isDefaultContentType(type)) getDefaultContentTypeProbe().getContentType(name, type) else type.toLowerTrim() else DEFAULT_CONTENT_TYPE
 
     override fun toString() = toJSONString()
+
+    override fun hashCode() = self.contentHashCode()
+
+    override fun equals(other: Any?) = when (other) {
+        is StatusData -> this === other || self contentEquals other.self
+        else -> false
+    }
+
+    override fun clone() = copyOf()
+
+    override fun copyOf() = StatusData(name, bucket, etag, file, contentSize, creationTime, metaData, type)
 }

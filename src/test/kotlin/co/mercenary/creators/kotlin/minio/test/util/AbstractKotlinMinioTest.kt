@@ -20,11 +20,13 @@ import co.mercenary.creators.kotlin.minio.*
 import co.mercenary.creators.kotlin.util.*
 import java.util.*
 
-abstract class AbstractKotlinMinioTest : AbstractKotlinTest() {
+abstract class AbstractKotlinMinioTest @JvmOverloads constructor(private val file: String = "file:/opt/development/properties/mercenary-creators-minio/minio-test.properties") : AbstractKotlinTest() {
+
+    val loader = contentResourceLoader
 
     override fun getConfigPropertiesBuilder(): () -> Properties = {
         Properties().also { prop ->
-            cachedContentResourceLoader["file:/opt/development/properties/minio/minio-test.properties"].toInputStream().use { prop.load(it) }
+            loader[file].toInputStream().use { prop.load(it) }
         }
     }
 

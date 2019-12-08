@@ -16,26 +16,19 @@
 
 package co.mercenary.creators.kotlin.minio
 
-import com.fasterxml.jackson.annotation.JsonInclude
-import java.util.*
+import co.mercenary.creators.kotlin.util.io.*
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-class BucketData @JvmOverloads constructor(val name: String, val creationTime: Date? = null) : MinioDataAware<BucketData> {
-
-    private val self: ByteArray by lazy {
-        toByteArray()
-    }
-
-    override fun toString() = toJSONString()
-
-    override fun hashCode() = self.contentHashCode()
+class MinioContentResource(data: ByteArray, path: String, type: String, time: Long) : AbstractContentResourceBase(path, type, time), CachedContentResource {
+    private val save = data.copyOf()
+    override fun getContentData() = save.copyOf()
+    override fun getInputStream() = save.inputStream()
+    override fun getContentSize() = save.size.toLong()
+    override fun toString() = getDescription()
 
     override fun equals(other: Any?) = when (other) {
-        is BucketData -> this === other || self contentEquals other.self
+        is MinioContentResource -> getContentPath() == other.getContentPath() && save contentEquals other.save
         else -> false
     }
 
-    override fun clone() = copyOf()
-
-    override fun copyOf() = BucketData(name, creationTime)
+    override fun hashCode() = save.contentHashCode() + 31 * getContentPath().hashCode()
 }

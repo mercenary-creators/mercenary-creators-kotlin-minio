@@ -20,7 +20,6 @@ import co.mercenary.creators.kotlin.util.*
 import co.mercenary.creators.kotlin.util.io.*
 import co.mercenary.creators.kotlin.util.logging.ILogging
 import io.minio.*
-import io.minio.messages.Item
 import java.io.*
 
 class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, private val access: CharSequence, private val secret: CharSequence, private val region: CharSequence? = X_AMAZON_REGION_USA_EAST_1) : MinioOperations {
@@ -57,12 +56,8 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
             if (data.isContentThere().and(create(bucket))) {
                 val type = data.getContentType()
                 client.putObject(bucket, name, data.toInputStream(), data.getContentSize(), null, null, type)
-                val hash = meta?.toHash()
-                if (hash.isNullOrEmpty()) {
-                    return true
-                }
-                else {
-                    client.copyObject(bucket, name, mutableMapOf("Content-Type" to type) + hash, null, bucket, name, null, MinioCopyConditions)
+                if (!meta.isNullOrEmpty()) {
+                    client.copyObject(bucket, name, mutableMapOf("Content-Type" to type) + meta, null, bucket, name, null, MinioCopyConditions)
                 }
                 return true
             }
@@ -138,9 +133,9 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
         }
     }
 
-    override fun loader(name: String): Boolean {
+    override fun register(prefix: String): Boolean {
         if (placed.compareAndSet(false, true)) {
-            val head = name.trim().replace(IO.PREFIX_COLON, EMPTY_STRING).trim().plus(IO.PREFIX_COLON)
+            val head = prefix.trim().replace(IO.PREFIX_COLON, EMPTY_STRING).trim().plus(IO.PREFIX_COLON)
             contentResourceLoader += object : ContentProtocolResolver {
                 override fun resolve(path: String, load: ContentResourceLoader): ContentResource? {
                     if (path.startsWith(head)) {
@@ -148,10 +143,11 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
                         val look = norm.indexOf(IO.SINGLE_SLASH)
                         if (look != IS_NOT_FOUND) {
                             val base = norm.substring(0, look)
-                            val file = norm.substring(look.inc())
-                            if (exists(file, base)) {
-                                 try {
-                                    return load[client.presignedGetObject(base, file)].toContentCache()
+                            val file = norm.substring(look + 1)
+                            val stat = stat(file, base)
+                            if (stat.file) {
+                                try {
+                                    return MinioContentResource(stream(file, base).toByteArray(), path, stat.contentType, stat.creationTime.copyOf().toLong())
                                 }
                                 catch (cause: Throwable) {
                                     Throwables.thrown(cause)
@@ -176,9 +172,6 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
         }
         catch (cause: Throwable) {
             Throwables.thrown(cause)
-            logger.error(cause) {
-                "bucket = $bucket"
-            }
             false
         }
     }
@@ -200,43 +193,43 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
         }
     }
 
-    override fun items(bucket: String, prefix: String?, recursive: Boolean) = client.listObjects(bucket, prefix, recursive).toSequence().map { data ->
-        data.get().let { ItemData(it.objectName(), bucket, it.etag, it.storageClass(), it.file, it.objectSize(), if (it.file) it.lastModified() else null, this) }
+    override fun items(bucket: String, recursive: Boolean, prefix: String?) = client.listObjects(bucket, prefix, recursive).toSequence().map { data ->
+        data.get().let { ItemData(it.objectName(), bucket, it.etag()?.replace("\"", EMPTY_STRING), it.storageClass(), it.isDir.not(), it.objectSize(), if (it.isDir.not()) it.lastModified() else null, this) }
     }
 
-    override fun head(name: String, bucket: String): HeadData {
-        return client.statObject(bucket, name).httpHeaders()
-    }
 
     override fun stat(name: String, bucket: String): StatusData {
         return try {
-            client.statObject(bucket, name).let { StatusData(name, bucket, it.etag, true, it.length(), it.createdTime(), MetaData(it.httpHeaders()).toHash(), it.contentType()) }
+            client.statObject(bucket, name).let { StatusData(name, bucket, it.etag()?.replace("\"", EMPTY_STRING), true, it.length(), it.createdTime(), MetaData.nake(it.httpHeaders()), it.contentType()) }
         }
         catch (cause: Throwable) {
             Throwables.thrown(cause)
-            StatusData(name, bucket, null, false, 0, null, emptyMap(), DEFAULT_CONTENT_TYPE)
+            StatusData(name, bucket)
         }
     }
 
-    override fun meta(name: String, bucket: String) = MetaData(client.statObject(bucket, name).httpHeaders())
+    override fun meta(name: String, bucket: String) = try {
+        MetaData(MetaData.nake(client.statObject(bucket, name).httpHeaders()))
+    }
+    catch (cause: Throwable) {
+        Throwables.thrown(cause)
+        throw MercenaryFatalExceptiion(cause)
+    }
 
     override fun meta(name: String, bucket: String, meta: MetaData, merge: Boolean): Boolean {
         if (exists(name, bucket)) {
             try {
                 val maps = mutableMapOf("Content-Type" to stat(name, bucket).contentType)
                 if (merge) {
-                    client.copyObject(bucket, name, maps + meta(name, bucket).plus(meta).toHash(), null, bucket, name, null, MinioCopyConditions)
+                    client.copyObject(bucket, name, maps + meta(name, bucket) + meta, null, bucket, name, null, MinioCopyConditions)
                 }
                 else {
-                    client.copyObject(bucket, name, maps + meta.toHash(), null, bucket, name, null, MinioCopyConditions)
+                    client.copyObject(bucket, name, maps + meta, null, bucket, name, null, MinioCopyConditions)
                 }
                 return true
             }
             catch (cause: Throwable) {
                 Throwables.thrown(cause)
-                logger.error(cause) {
-                    "bucket = $bucket"
-                }
             }
         }
         return false
@@ -245,10 +238,9 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
     override fun copy(name: String, bucket: String, dest: String, target: String, meta: MetaData?): Boolean {
         return when (exists(name, bucket)) {
             true -> true.also {
-                val hash = meta?.toHash()
-                when (hash.isNullOrEmpty()) {
+                when (meta.isNullOrEmpty()) {
                     true -> client.copyObject(target, dest, null, null, bucket, name, null, null)
-                    else -> client.copyObject(target, dest, hash, null, bucket, name, null, MinioCopyConditions)
+                    else -> client.copyObject(target, dest, meta, null, bucket, name, null, MinioCopyConditions)
                 }
             }
             else -> false
@@ -259,16 +251,5 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
         init {
             setReplaceMetadataDirective()
         }
-    }
-
-    companion object {
-        private val Item.file: Boolean
-            get() = isDir.not()
-
-        private val Item.etag: String?
-            get() = etag()?.replace("\"", EMPTY_STRING)
-
-        private val ObjectStat.etag: String?
-            get() = etag()?.replace("\"", EMPTY_STRING)
     }
 }

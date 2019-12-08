@@ -14,8 +14,20 @@
  * limitations under the License.
  */
 
-package co.mercenary.creators.kotlin.minio
+package co.mercenary.creators.kotlin.minio.test.aws3
 
-interface MinioBucketOperations {
+import co.mercenary.creators.kotlin.minio.*
+import org.junit.jupiter.api.Test
 
+class BucketsTest : KotlinTest("file:/opt/development/properties/mercenary-creators-minio/minio-aws3.properties") {
+    @Test
+    fun test() {
+        minio.buckets().forEachIndexed { many, each ->
+            info { "%2d : %s".format(many + 1, each.toJSONString(false)) }
+        }
+        val meta = MetaData("dean" to 1)
+        info { meta }
+        meta.toMutableMap().putIfAbsent("z", "")
+        info { meta }
+    }
 }

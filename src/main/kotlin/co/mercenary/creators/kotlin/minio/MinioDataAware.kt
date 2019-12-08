@@ -17,5 +17,6 @@
 package co.mercenary.creators.kotlin.minio
 
 import co.mercenary.creators.kotlin.json.base.*
+import co.mercenary.creators.kotlin.util.type.Copyable
 
-interface MinioDataAware<T : MinioDataAware<T>> : JSONAware
+interface MinioDataAware<T : MinioDataAware<T>> : JSONObjectAware, Copyable<T>, Cloneable
