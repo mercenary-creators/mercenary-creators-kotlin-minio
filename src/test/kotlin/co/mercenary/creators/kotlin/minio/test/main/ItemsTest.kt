@@ -20,18 +20,19 @@ import co.mercenary.creators.kotlin.minio.*
 import co.mercenary.creators.kotlin.util.*
 import org.junit.jupiter.api.Test
 
-class ItemsTest : KotlinTest() {
+class ItemsTest : KotlinTest(MAIN_TEST_FILE) {
     @Test
     fun test() {
         val many = 0.toAtomic()
-        minio.items("root").forEach { each ->
+        minio.itemsOf("root").forEach { each ->
             info { many }
             info { each }
-            info { each.stat() }
-            many.getAndIncrement()
+            info { each.statusOf() }
+            many.increment()
         }
         info { many }
-        val flag = minio.register()
+        many shouldNotBe 0
+        val flag = minio.loaderOn(MINIO_RESOURCE_PREFIX)
         info { flag }
         val data = loader["minio://root/test.json"]
         info { data }

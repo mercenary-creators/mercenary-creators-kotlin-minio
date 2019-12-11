@@ -18,12 +18,30 @@
 
 package co.mercenary.creators.kotlin.minio
 
+import co.mercenary.creators.kotlin.util.*
+
+const val S3_RESOURCE_PREFIX = "s3:"
+
+const val MINIO_RESOURCE_PREFIX = "minio:"
+
 const val X_AMAZON_REGION_USA_EAST_1 = "us-east-1"
 
 const val X_AMAZON_META_HEADER_START = "x-amz-meta-"
 
-fun ItemData.stat() = if (file) operations.stat(name, bucket) else StatusData(name, bucket)
+@JvmOverloads
+fun resolveContentType(path: String, type: String = DEFAULT_CONTENT_TYPE): String {
+    if (isDefaultContentType(type)) {
+        val name = path.toLowerTrim()
+        if (name.endsWith(".kt")) {
+            return "text/x-kotlin-source"
+        }
+        if (name.endsWith(".kts")) {
+            return "text/x-kotlin-script"
+        }
+        return getDefaultContentTypeProbe().getContentType(path, type)
+    }
+    return type.toLowerTrim()
+}
 
-fun ItemData.meta() = if (file) operations.meta(name, bucket) else MetaData()
-
+fun Iterable<String>.uniqueOf(): List<String> = mapNotNull { name -> name.trim().takeIf { take -> take.isNotEmpty() } }.distinct()
 

@@ -18,10 +18,16 @@
 
 package co.mercenary.creators.kotlin.minio
 
-typealias Executable = org.junit.jupiter.api.function.Executable
+import java.util.concurrent.atomic.AtomicInteger
+
+const val MAIN_TEST_FILE = "file:/opt/development/properties/mercenary-creators-minio/minio-test.properties"
+
+const val AWS3_TEST_FILE = "file:/opt/development/properties/mercenary-creators-minio/minio-aws3.properties"
 
 typealias TodoData = co.mercenary.creators.kotlin.json.util.typicode.TypicodeTodoData
 
 typealias KotlinTest =  co.mercenary.creators.kotlin.minio.test.util.AbstractKotlinMinioTest
+
+fun AtomicInteger.increment() = this.getAndIncrement()
 
 

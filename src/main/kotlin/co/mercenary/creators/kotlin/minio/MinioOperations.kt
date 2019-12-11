@@ -22,28 +22,32 @@ import java.net.URL
 import java.nio.file.Path
 
 interface MinioOperations {
-    fun traced(data: OutputStream? = System.out)
-    fun register(prefix: String = "minio:"): Boolean
-    fun exists(bucket: String): Boolean
-    fun create(bucket: String): Boolean
+    fun serverOf(): String
+    fun regionOf(): String
+    fun traceOff(): Boolean
+    fun traceOn(data: OutputStream = System.out): Boolean
+    fun loaderOn(prefix: String = MINIO_RESOURCE_PREFIX): Boolean
+    fun isBucket(bucket: String): Boolean
+    fun isBucket(bucket: BucketData) = isBucket(bucket.name)
+    fun bucketOf(bucket: String, lock: Boolean = false): Boolean
     fun buckets(): Sequence<BucketData>
     fun buckets(name: String): Sequence<BucketData>
-    fun buckets(list: Iterable<String>): Sequence<BucketData>
+    fun buckets(args: Iterable<String>): Sequence<BucketData>
     fun buckets(test: (String) -> Boolean): Sequence<BucketData>
-    fun buckets(test: Regex): Sequence<BucketData> = buckets { test.matches(it) }
+    fun buckets(test: Regex): Sequence<BucketData> = buckets { test matches it }
     fun buckets(vararg list: String): Sequence<BucketData> = buckets(list.toList())
     fun exists(name: String, bucket: String): Boolean
     fun delete(name: String, bucket: String): Boolean
     fun delete(args:  Iterable<String>, bucket: String): Boolean
     fun delete(args:  Sequence<String>, bucket: String): Boolean = delete(args.toList(), bucket)
-    fun items(bucket: String, recursive: Boolean = false, prefix: String? = null): Sequence<ItemData>
-    fun stat(name: String, bucket: String): StatusData
-    fun stream(name: String, bucket: String): InputStream
-    fun meta(name: String, bucket: String): MetaData
-    fun meta(name: String, bucket: String, meta: MetaData, merge: Boolean = false): Boolean
+    fun itemsOf(bucket: String, recursive: Boolean = false, prefix: String? = null): Sequence<ItemData>
+    fun statusOf(name: String, bucket: String): StatusData
+    fun streamOf(name: String, bucket: String): InputStream
+    fun metaDataOf(name: String, bucket: String): MetaData
+    fun metaDataOf(name: String, bucket: String, meta: MetaData, merge: Boolean = false): Boolean
     fun save(name: String, bucket: String, data: ContentResource, meta: MetaData? = null): Boolean
     fun save(name: String, bucket: String, data: URL, meta: MetaData? = null): Boolean = save(name, bucket, URLContentResource(data), meta)
     fun save(name: String, bucket: String, data: File, meta: MetaData? = null): Boolean = save(name, bucket, FileContentResource(data), meta)
     fun save(name: String, bucket: String, data: Path, meta: MetaData? = null): Boolean = save(name, bucket, FileContentResource(data.toFile()), meta)
-    fun copy(name: String, bucket: String, dest: String = name, target: String = bucket, meta: MetaData? = null): Boolean
+    fun copyOf(name: String, bucket: String, dest: String = name, target: String = bucket, meta: MetaData? = null): Boolean
 }

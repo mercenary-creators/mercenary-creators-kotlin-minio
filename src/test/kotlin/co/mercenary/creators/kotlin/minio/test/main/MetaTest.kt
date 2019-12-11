@@ -20,30 +20,27 @@ import co.mercenary.creators.kotlin.minio.*
 import co.mercenary.creators.kotlin.util.*
 import org.junit.jupiter.api.Test
 
-class MetaTest : KotlinTest() {
+class MetaTest : KotlinTest(MAIN_TEST_FILE) {
     @Test
     fun test() {
+        val base = "root"
         val name = uuid().plus(".json")
-        minio.save(name, "root", TodoData.link())
-        info { minio.stat(name, "root") }
-        minio.meta(name, "root", MetaData("name" to "test"))
-        info { minio.stat(name, "root") }
-        info { EMPTY_STRING }
-        minio.save(uuid().plus(".json"), "root", TodoData.link(), MetaData("name" to "dean"))
-        var many = 0
-        minio.items("root").forEach { each ->
-            val meta = each.meta()
+        minio.traceOn()
+        minio.save(name, base, TodoData.link())
+        info { minio.statusOf(name, base) }
+        minio.metaDataOf(name, base, MetaData("name_   " to "test_   "))
+        info { minio.statusOf(name, base) }
+        val many = 0.toAtomic()
+        minio.itemsOf(base).forEach { each ->
+            val meta = each.metaDataOf()
             if (meta.isNotEmpty()) {
-                info { each.stat() }
+                info { each.statusOf() }
                 info { meta }
-                many++
-                meta["uuid"] = uuid()
-                info { meta }
+                many.increment()
             }
         }
+        minio.delete(name, base)
         info { many }
-        many.shouldNotBe(0) {
-            "many should not be 0 but ($many)"
-        }
+        many shouldNotBe 0
     }
 }

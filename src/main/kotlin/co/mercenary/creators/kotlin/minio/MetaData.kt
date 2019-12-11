@@ -16,9 +16,6 @@
 
 package co.mercenary.creators.kotlin.minio
 
-import com.fasterxml.jackson.annotation.JsonInclude
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
 class MetaData private constructor(private val hash: LinkedHashMap<String, String>) : MinioDataAware<MetaData>, Map<String, String> by hash {
 
     constructor(args: Map<String, Any>) : this(LinkedHashMap(args.size)) {
@@ -38,7 +35,7 @@ class MetaData private constructor(private val hash: LinkedHashMap<String, Strin
     override fun toString() = toJSONString()
 
     override fun equals(other: Any?) = when (other) {
-        is MetaData -> other.hash == hash
+        is MetaData -> this === other || other.hash == hash
         else -> false
     }
 
@@ -55,7 +52,7 @@ class MetaData private constructor(private val hash: LinkedHashMap<String, Strin
     companion object {
 
         @JvmStatic
-        fun nake(args: Map<String, List<String>>?): Map<String, String> {
+        fun create(args: Map<String, List<String>>?): Map<String, String> {
             if (args.isNullOrEmpty()) {
                 return emptyMap()
             }
@@ -63,7 +60,7 @@ class MetaData private constructor(private val hash: LinkedHashMap<String, Strin
                 for ((k, v) in args) {
                     if (test(k)) {
                         if (!v.isNullOrEmpty()) {
-                            hash[meta(k)] = code(v[0])
+                            hash[k] = v[0]
                         }
                     }
                 }
@@ -71,11 +68,11 @@ class MetaData private constructor(private val hash: LinkedHashMap<String, Strin
         }
 
         private fun code(data: Any): String {
-            return data.toString()
+            return MinioStatic.escape(data)
         }
 
         private fun meta(meta: String): String {
-            return if (test(meta)) meta.toLowerCase() else X_AMAZON_META_HEADER_START.plus(meta).toLowerCase()
+            return if (test(meta)) MinioStatic.escape(meta) else X_AMAZON_META_HEADER_START + MinioStatic.escape(meta)
         }
 
         private fun test(meta: String) = meta.toLowerCase().regionMatches(0, X_AMAZON_META_HEADER_START, 0, X_AMAZON_META_HEADER_START.length)

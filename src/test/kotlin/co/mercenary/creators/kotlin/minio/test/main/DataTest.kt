@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package co.mercenary.creators.kotlin.minio.test.aws3
+package co.mercenary.creators.kotlin.minio.test.main
 
 import co.mercenary.creators.kotlin.minio.*
 import org.junit.jupiter.api.Test
 
-class BucketsTest : KotlinTest(AWS3_TEST_FILE) {
+class DataTest : KotlinTest(MAIN_TEST_FILE) {
     @Test
     fun test() {
-        minio.buckets().forEachIndexed { many, each ->
-            info { "%2d : %s".format(many + 1, each.toJSONString(false)) }
+        minio.itemsOf("themodernway", true).forEach { each ->
+            info { each }
+            info { each.statusOf() }
         }
     }
 }

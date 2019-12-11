@@ -16,10 +16,10 @@
 
 package co.mercenary.creators.kotlin.minio.test.main
 
-import co.mercenary.creators.kotlin.minio.KotlinTest
+import co.mercenary.creators.kotlin.minio.*
 import org.junit.jupiter.api.Test
 
-class BucketsTest : KotlinTest() {
+class BucketsTest : KotlinTest(MAIN_TEST_FILE) {
     @Test
     fun test() {
         minio.buckets().forEachIndexed { many, each ->

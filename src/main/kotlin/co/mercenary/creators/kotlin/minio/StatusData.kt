@@ -27,8 +27,8 @@ class StatusData @JvmOverloads constructor(val name: String, val bucket: String,
         toByteArray()
     }
 
-    val contentType: String
-        get() = if (file) if (isDefaultContentType(type)) getDefaultContentTypeProbe().getContentType(name, type) else type.toLowerTrim() else DEFAULT_CONTENT_TYPE
+    val contentType: String?
+        get() = if (file) resolveContentType(name, type) else null
 
     override fun toString() = toJSONString()
 

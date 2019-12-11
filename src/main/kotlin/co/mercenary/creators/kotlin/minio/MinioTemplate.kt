@@ -18,42 +18,38 @@ package co.mercenary.creators.kotlin.minio
 
 import co.mercenary.creators.kotlin.util.*
 import co.mercenary.creators.kotlin.util.io.*
-import co.mercenary.creators.kotlin.util.logging.ILogging
 import io.minio.*
 import java.io.*
 
-class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, private val access: CharSequence, private val secret: CharSequence, private val region: CharSequence? = X_AMAZON_REGION_USA_EAST_1) : MinioOperations {
+class MinioTemplate @JvmOverloads constructor(private val server: String, private val access: String, private val secret: String, private val region: String? = X_AMAZON_REGION_USA_EAST_1) : MinioOperations, Logging() {
 
     private val placed = false.toAtomic()
 
-    private val logger: ILogging by lazy {
-        LoggingFactory.logger(this)
-    }
-
     private val client: MinioClient by lazy {
-        MinioClient(server.toString(), access.toString(), secret.toString(), region.orElse { X_AMAZON_REGION_USA_EAST_1 }.toString())
+        MinioClient(serverOf(), access, secret, regionOf())
     }
 
-    override fun create(bucket: String): Boolean {
-        if (exists(bucket)) {
+    override fun serverOf() = server.trim()
+
+    override fun regionOf() = toTrimOrElse(region, X_AMAZON_REGION_USA_EAST_1)
+
+    override fun bucketOf(bucket: String, lock: Boolean): Boolean {
+        if (isBucket(bucket)) {
             return true
         }
         try {
-            client.makeBucket(bucket)
+            client.makeBucket(bucket, null, lock)
             return true
         }
         catch (cause: Throwable) {
             Throwables.thrown(cause)
-            logger.error(cause) {
-                "bucket = $bucket"
-            }
         }
         return false
     }
 
     override fun save(name: String, bucket: String, data: ContentResource, meta: MetaData?): Boolean {
         try {
-            if (data.isContentThere().and(create(bucket))) {
+            if (data.isContentThere().and(bucketOf(bucket))) {
                 val type = data.getContentType()
                 client.putObject(bucket, name, data.toInputStream(), data.getContentSize(), null, null, type)
                 if (!meta.isNullOrEmpty()) {
@@ -64,44 +60,30 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
         }
         catch (cause: Throwable) {
             Throwables.thrown(cause)
-            logger.error(cause) {
-                "bucket = $bucket"
-            }
         }
         return false
     }
 
-    override fun exists(bucket: String): Boolean {
-        return try {
-            client.bucketExists(bucket)
-        }
-        catch (cause: Throwable) {
-            Throwables.thrown(cause)
-            logger.error(cause) {
-                "bucket = $bucket"
-            }
-            false
-        }
+    override fun isBucket(bucket: String) = try {
+        client.bucketExists(bucket)
+    }
+    catch (cause: Throwable) {
+        Throwables.thrown(cause)
+        false
     }
 
-    override fun delete(name: String, bucket: String): Boolean {
-        try {
-            if (exists(name, bucket)) {
-                client.removeObject(bucket, name)
-                return true
-            }
-        }
-        catch (cause: Throwable) {
-            Throwables.thrown(cause)
-            logger.error(cause) {
-                "bucket = $bucket"
-            }
-        }
-        return false
+
+    override fun delete(name: String, bucket: String) = try {
+        client.removeObject(bucket, name)
+        true
+    }
+    catch (cause: Throwable) {
+        Throwables.thrown(cause)
+        false
     }
 
     override fun delete(args: Iterable<String>, bucket: String): Boolean {
-        return args.distinct().let { list ->
+        return args.uniqueOf().let { list ->
             try {
                 val good = mutableSetOf<String>()
                 client.removeObjects(bucket, list).forEach {
@@ -116,25 +98,31 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
             }
             catch (cause: Throwable) {
                 Throwables.thrown(cause)
-                logger.error(cause) {
-                    "bucket = $bucket"
-                }
             }
             false
         }
     }
 
-    override fun traced(data: OutputStream?) {
-        if (data != null) {
-            client.traceOn(data)
-        }
-        else {
-            client.traceOff()
-        }
+    override fun traceOff() = try {
+        client.traceOff()
+        true
+    }
+    catch (cause: Throwable) {
+        Throwables.thrown(cause)
+        false
     }
 
-    override fun register(prefix: String): Boolean {
-        if (placed.compareAndSet(false, true)) {
+    override fun traceOn(data: OutputStream) = try {
+        client.traceOn(data)
+        true
+    }
+    catch (cause: Throwable) {
+        Throwables.thrown(cause)
+        false
+    }
+
+    override fun loaderOn(prefix: String): Boolean {
+        return if (placed.compareAndSet(false, true)) {
             val head = prefix.trim().replace(IO.PREFIX_COLON, EMPTY_STRING).trim().plus(IO.PREFIX_COLON)
             contentResourceLoader += object : ContentProtocolResolver {
                 override fun resolve(path: String, load: ContentResourceLoader): ContentResource? {
@@ -144,16 +132,14 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
                         if (look != IS_NOT_FOUND) {
                             val base = norm.substring(0, look)
                             val file = norm.substring(look + 1)
-                            val stat = stat(file, base)
+                            val stat = statusOf(file, base)
                             if (stat.file) {
-                                try {
-                                    return MinioContentResource(stream(file, base).toByteArray(), path, stat.contentType, stat.creationTime.copyOf().toLong())
+                                return try {
+                                    MinioContentResource(streamOf(file, base).toByteArray(), path, stat.contentType.orElse { resolveContentType(file) }, stat.creationTime.copyOf().toLong())
                                 }
                                 catch (cause: Throwable) {
                                     Throwables.thrown(cause)
-                                    logger.error(cause) {
-                                        "path = $path"
-                                    }
+                                    null
                                 }
                             }
                         }
@@ -161,9 +147,9 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
                     return null
                 }
             }
-            return true
+            true
         }
-        return false
+        else false
     }
 
     override fun exists(name: String, bucket: String): Boolean {
@@ -176,31 +162,40 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
         }
     }
 
-    override fun stream(name: String, bucket: String): InputStream = client.getObject(bucket, name)
-
-    override fun buckets() = client.listBuckets().toSequence().map { BucketData(it.name(), it.creationDate()) }
-
-    override fun buckets(name: String) = client.listBuckets().toSequence().filter { name == it.name() }.map { BucketData(name, it.creationDate()) }
-
-    override fun buckets(test: (String) -> Boolean) = client.listBuckets().toSequence().filter { test(it.name()) }.map { BucketData(it.name(), it.creationDate()) }
-
-    override fun buckets(list: Iterable<String>): Sequence<BucketData> {
-        val look = list.distinct()
-        return when (look.size) {
-            0 -> emptySequence()
-            1 -> look[0].let { name -> client.listBuckets().toSequence().filter { name == it.name() }.map { BucketData(name, it.creationDate()) } }
-            else -> client.listBuckets().toSequence().filter { it.name() in look }.map { BucketData(it.name(), it.creationDate()) }
+    override fun streamOf(name: String, bucket: String): InputStream {
+        return try {
+            client.getObject(bucket, name)
+        }
+        catch (cause: Throwable) {
+            Throwables.thrown(cause)
+            EmptyInputStream
         }
     }
 
-    override fun items(bucket: String, recursive: Boolean, prefix: String?) = client.listObjects(bucket, prefix, recursive).toSequence().map { data ->
-        data.get().let { ItemData(it.objectName(), bucket, it.etag()?.replace("\"", EMPTY_STRING), it.storageClass(), it.isDir.not(), it.objectSize(), if (it.isDir.not()) it.lastModified() else null, this) }
+    override fun buckets() = client.listBuckets().asSequence().map { BucketData(it.name(), it.creationDate()) }
+
+    override fun buckets(name: String) = client.listBuckets().asSequence().filter { name == it.name() }.map { BucketData(name, it.creationDate()) }
+
+    override fun buckets(test: (String) -> Boolean) = client.listBuckets().asSequence().filter { test(it.name()) }.map { BucketData(it.name(), it.creationDate()) }
+
+    override fun buckets(args: Iterable<String>): Sequence<BucketData> {
+        val look = args.uniqueOf()
+        return when (look.size) {
+            0 -> emptySequence()
+            1 -> look[0].let { name -> client.listBuckets().asSequence().filter { name == it.name() }.map { BucketData(name, it.creationDate()) } }
+            else -> client.listBuckets().asSequence().filter { it.name() in look }.map { BucketData(it.name(), it.creationDate()) }
+        }
     }
 
+    override fun itemsOf(bucket: String, recursive: Boolean,  prefix: String?) = client.listObjects(bucket, prefix, recursive).asSequence().mapNotNull { data ->
+        val item = data.get()
+        val file = item.isDir.not()
+        ItemData(item.objectName(), bucket, item.etag()?.replace("\"", EMPTY_STRING), item.storageClass(), file, if (file) item.objectSize() else null, if (file) item.lastModified() else null, this)
+    }
 
-    override fun stat(name: String, bucket: String): StatusData {
+    override fun statusOf(name: String, bucket: String): StatusData {
         return try {
-            client.statObject(bucket, name).let { StatusData(name, bucket, it.etag()?.replace("\"", EMPTY_STRING), true, it.length(), it.createdTime(), MetaData.nake(it.httpHeaders()), it.contentType()) }
+            client.statObject(bucket, name).let { StatusData(name, bucket, it.etag()?.replace("\"", EMPTY_STRING), true, it.length(), it.createdTime(), MetaData.create(it.httpHeaders()), it.contentType()) }
         }
         catch (cause: Throwable) {
             Throwables.thrown(cause)
@@ -208,20 +203,20 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
         }
     }
 
-    override fun meta(name: String, bucket: String) = try {
-        MetaData(MetaData.nake(client.statObject(bucket, name).httpHeaders()))
+    override fun metaDataOf(name: String, bucket: String) = try {
+        MetaData(MetaData.create(client.statObject(bucket, name).httpHeaders()))
     }
     catch (cause: Throwable) {
         Throwables.thrown(cause)
         throw MercenaryFatalExceptiion(cause)
     }
 
-    override fun meta(name: String, bucket: String, meta: MetaData, merge: Boolean): Boolean {
+    override fun metaDataOf(name: String, bucket: String, meta: MetaData, merge: Boolean): Boolean {
         if (exists(name, bucket)) {
             try {
-                val maps = mutableMapOf("Content-Type" to stat(name, bucket).contentType)
+                val maps = mutableMapOf("Content-Type" to statusOf(name, bucket).contentType)
                 if (merge) {
-                    client.copyObject(bucket, name, maps + meta(name, bucket) + meta, null, bucket, name, null, MinioCopyConditions)
+                    client.copyObject(bucket, name, maps + metaDataOf(name, bucket) + meta, null, bucket, name, null, MinioCopyConditions)
                 }
                 else {
                     client.copyObject(bucket, name, maps + meta, null, bucket, name, null, MinioCopyConditions)
@@ -235,7 +230,7 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
         return false
     }
 
-    override fun copy(name: String, bucket: String, dest: String, target: String, meta: MetaData?): Boolean {
+    override fun copyOf(name: String, bucket: String, dest: String, target: String, meta: MetaData?): Boolean {
         return when (exists(name, bucket)) {
             true -> true.also {
                 when (meta.isNullOrEmpty()) {
@@ -245,6 +240,17 @@ class MinioTemplate @JvmOverloads constructor(private val server: CharSequence, 
             }
             else -> false
         }
+    }
+
+    override fun hashCode() = toString().hashCode()
+
+    override fun equals(other: Any?) = when (other) {
+        is MinioTemplate -> other === this || ((serverOf() == other.serverOf()) && (access == other.access) && (secret == other.secret) && (regionOf() == other.regionOf()))
+        else -> false
+    }
+
+    override fun toString(): String {
+        return "${javaClass.name}(${serverOf()}, ${regionOf()})"
     }
 
     private object MinioCopyConditions : CopyConditions() {

@@ -17,16 +17,22 @@
 package co.mercenary.creators.kotlin.minio
 
 import co.mercenary.creators.kotlin.util.io.*
+import com.fasterxml.jackson.annotation.JsonIgnoreType
 
-class MinioContentResource(data: ByteArray, path: String, type: String, time: Long) : AbstractContentResourceBase(path, type, time), CachedContentResource {
+@JsonIgnoreType
+class MinioContentResource(data: ByteArray, path: String, private val type: String, time: Long) : AbstractContentResourceBase(path, type, time), CachedContentResource {
     private val save = data.copyOf()
     override fun getContentData() = save.copyOf()
     override fun getInputStream() = save.inputStream()
     override fun getContentSize() = save.size.toLong()
+    override fun getContentType(): String {
+        return resolveContentType(getContentPath(), type)
+    }
+
     override fun toString() = getDescription()
 
     override fun equals(other: Any?) = when (other) {
-        is MinioContentResource -> getContentPath() == other.getContentPath() && save contentEquals other.save
+        is MinioContentResource -> this === other || (getContentPath() == other.getContentPath() && save contentEquals other.save)
         else -> false
     }
 

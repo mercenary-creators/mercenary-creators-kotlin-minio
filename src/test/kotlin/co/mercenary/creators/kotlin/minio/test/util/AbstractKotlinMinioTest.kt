@@ -20,20 +20,20 @@ import co.mercenary.creators.kotlin.minio.*
 import co.mercenary.creators.kotlin.util.*
 import java.util.*
 
-abstract class AbstractKotlinMinioTest @JvmOverloads constructor(private val file: String = "file:/opt/development/properties/mercenary-creators-minio/minio-test.properties") : AbstractKotlinTest() {
+abstract class AbstractKotlinMinioTest @JvmOverloads constructor(private val file: String = MAIN_TEST_FILE) : AbstractKotlinTest() {
 
-    val loader = contentResourceLoader
+    protected val loader = contentResourceLoader
 
     override fun getConfigPropertiesBuilder(): () -> Properties = {
         Properties().also { prop ->
-            loader[file].toInputStream().use { prop.load(it) }
+            loader[file].toInputStream().reader(Charsets.UTF_8).buffered().use { prop.load(it) }
         }
     }
 
-    private val template: MinioOperations by lazy {
+    private val template: MinioTemplate by lazy {
         MinioTemplate(getConfigProperty("co.mercenary.creators.minio.server-url"), getConfigProperty("co.mercenary.creators.minio.access-key"), getConfigProperty("co.mercenary.creators.minio.secret-key"))
     }
 
-    val minio: MinioOperations
+    protected val minio: MinioOperations
         get() = template
 }

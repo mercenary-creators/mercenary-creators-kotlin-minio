@@ -21,14 +21,18 @@ import com.fasterxml.jackson.annotation.*
 import java.util.*
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-class ItemData(val name: String, val bucket: String, val etag: String?, val storageClass: String?, val file: Boolean, val contentSize: Long, val lastModified: Date?, @JsonIgnore val operations: MinioOperations) : MinioDataAware<ItemData>, InputStreamSupplier {
+class ItemData(val name: String, val bucket: String, val etag: String?, val storageClass: String?, val file: Boolean, val contentSize: Long?, val lastModified: Date?, @JsonIgnore val operations: MinioOperations) : MinioDataAware<ItemData>, InputStreamSupplier {
 
     private val self: ByteArray by lazy {
         toByteArray()
     }
 
+    fun statusOf() = if (file) operations.statusOf(name, bucket) else StatusData(name, bucket)
+
+    fun metaDataOf() = if (file) operations.metaDataOf(name, bucket) else MetaData()
+
     @JsonIgnore
-    override fun getInputStream() = if (file) operations.stream(name, bucket) else EmptyInputStream
+    override fun getInputStream() = if (file) operations.streamOf(name, bucket) else EmptyInputStream
 
     override fun toString() = toJSONString()
 

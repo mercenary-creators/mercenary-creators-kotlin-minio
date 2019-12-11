@@ -20,6 +20,7 @@ import co.mercenary.creators.kotlin.util.*
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.function.Executable
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 
 abstract class AbstractKotlinTest : Logging() {
 
@@ -64,6 +65,10 @@ abstract class AbstractKotlinTest : Logging() {
         Assertions.assertEquals(expected, actual)
     }
 
+    fun assertNotEquals(expected: Any?, actual: Any?) {
+        Assertions.assertNotEquals(expected, actual)
+    }
+
     fun assertEquals(expected: ByteArray?, actual: ByteArray?, block: () -> Any?) {
         Assertions.assertArrayEquals(expected, actual, toSafeString(block))
     }
@@ -91,6 +96,18 @@ abstract class AbstractKotlinTest : Logging() {
     infix fun <T : Any?> Iterable<T>?.shouldBe(value: Iterable<*>?) = assertEquals(value?.toList(), this?.toList())
 
     infix fun <T : Any> T?.shouldBe(value: Any?) = assertEquals(value, this)
+
+    infix fun AtomicInteger.shouldBe(value: Int) = assertEquals(value, this.get())
+
+    infix fun Int.shouldBe(value: AtomicInteger) = assertEquals(value.get(), this)
+
+    infix fun AtomicInteger.shouldBe(value: AtomicInteger) = assertEquals(value.get(), this.get())
+
+    infix fun AtomicInteger.shouldNotBe(value: Int) = assertNotEquals(value, this.get())
+
+    infix fun Int.shouldNotBe(value: AtomicInteger) = assertNotEquals(value.get(), this)
+
+    infix fun AtomicInteger.shouldNotBe(value: AtomicInteger) = assertNotEquals(value.get(), this.get())
 
     fun <T : Any?> List<T>.shouldBe(value: Iterable<*>?, block: () -> Any?) = assertEquals(value?.toList(), this, block)
 

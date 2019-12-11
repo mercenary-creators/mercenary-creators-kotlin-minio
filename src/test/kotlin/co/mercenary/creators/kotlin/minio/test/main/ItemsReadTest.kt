@@ -21,11 +21,11 @@ import co.mercenary.creators.kotlin.util.*
 import co.mercenary.creators.kotlin.minio.*
 import org.junit.jupiter.api.Test
 
-class ItemsReadTest : KotlinTest() {
+class ItemsReadTest : KotlinTest(MAIN_TEST_FILE) {
     @Test
     fun test() {
-        var many = 0
-        minio.items("root").forEach { data ->
+        val many = 0.toAtomic()
+        minio.itemsOf("root").forEach { data ->
             info { many }
             info { data }
             if (data.file) {
@@ -33,11 +33,9 @@ class ItemsReadTest : KotlinTest() {
                     info { "%2d : %s".format(size + 1, each) }
                 }
             }
-            many++
+            many.increment()
         }
         info { many }
-        many.shouldNotBe(0) {
-            "many should not be 0 but ($many)"
-        }
+        many shouldNotBe 0
     }
 }
