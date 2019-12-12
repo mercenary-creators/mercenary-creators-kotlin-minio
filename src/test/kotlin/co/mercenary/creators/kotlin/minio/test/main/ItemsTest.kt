@@ -20,7 +20,7 @@ import co.mercenary.creators.kotlin.minio.*
 import co.mercenary.creators.kotlin.util.*
 import org.junit.jupiter.api.Test
 
-class ItemsTest : KotlinTest(MAIN_TEST_FILE) {
+class ItemsTest : KotlinTest(MAIN_TEST_PROPERTIES) {
     @Test
     fun test() {
         val many = 0.toAtomic()

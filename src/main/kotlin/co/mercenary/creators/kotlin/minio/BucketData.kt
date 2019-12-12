@@ -16,26 +16,16 @@
 
 package co.mercenary.creators.kotlin.minio
 
+import co.mercenary.creators.kotlin.util.*
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.util.*
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-class BucketData @JvmOverloads constructor(val name: String, val creationTime: Date? = null) : MinioDataAware<BucketData> {
-
-    private val self: ByteArray by lazy {
-        toByteArray()
-    }
+data class BucketData(val name: String, val creationTime: Date?) : MinioDataAware<BucketData> {
 
     override fun toString() = toJSONString()
 
-    override fun hashCode() = self.contentHashCode()
-
-    override fun equals(other: Any?) = when (other) {
-        is BucketData -> this === other || self contentEquals other.self
-        else -> false
-    }
-
     override fun clone() = copyOf()
 
-    override fun copyOf() = BucketData(name, creationTime)
+    override fun copyOf() = BucketData(name, creationTime?.copyOf())
 }

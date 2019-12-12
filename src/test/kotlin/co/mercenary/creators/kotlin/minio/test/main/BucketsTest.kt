@@ -19,11 +19,19 @@ package co.mercenary.creators.kotlin.minio.test.main
 import co.mercenary.creators.kotlin.minio.*
 import org.junit.jupiter.api.Test
 
-class BucketsTest : KotlinTest(MAIN_TEST_FILE) {
+class BucketsTest : KotlinTest(MAIN_TEST_PROPERTIES) {
     @Test
     fun test() {
         minio.buckets().forEachIndexed { many, each ->
             info { "%2d : %s".format(many + 1, each.toJSONString(false)) }
+        }
+        when (val root = minio.bucketOf("root")) {
+            null -> warn { root }
+            else -> info { root }
+        }
+        when (val root = minio.bucketOf("oops")) {
+            null -> warn { root }
+            else -> info { root }
         }
     }
 }

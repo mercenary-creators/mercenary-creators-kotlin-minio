@@ -21,7 +21,7 @@ import co.mercenary.creators.kotlin.util.io.*
 import io.minio.*
 import java.io.*
 
-class MinioTemplate @JvmOverloads constructor(private val server: String, private val access: String, private val secret: String, private val region: String? = X_AMAZON_REGION_USA_EAST_1) : MinioOperations, Logging() {
+class MinioTemplate @JvmOverloads constructor(private val server: String, private val access: String, private val secret: String, private val region: String? = X_AMAZON_REGION_USA_EAST_1, private val name: String? = null) : MinioOperations, Logging() {
 
     private val placed = false.toAtomic()
 
@@ -29,11 +29,17 @@ class MinioTemplate @JvmOverloads constructor(private val server: String, privat
         MinioClient(serverOf(), access, secret, regionOf())
     }
 
+    private val uuid: String by lazy {
+        uuid()
+    }
+
+    override fun nameOf() = name.orElse { uuid }
+
     override fun serverOf() = server.trim()
 
     override fun regionOf() = toTrimOrElse(region, X_AMAZON_REGION_USA_EAST_1)
 
-    override fun bucketOf(bucket: String, lock: Boolean): Boolean {
+    override fun ensureBucket(bucket: String, lock: Boolean): Boolean {
         if (isBucket(bucket)) {
             return true
         }
@@ -49,7 +55,7 @@ class MinioTemplate @JvmOverloads constructor(private val server: String, privat
 
     override fun save(name: String, bucket: String, data: ContentResource, meta: MetaData?): Boolean {
         try {
-            if (data.isContentThere().and(bucketOf(bucket))) {
+            if (data.isContentThere().and(ensureBucket(bucket))) {
                 val type = data.getContentType()
                 client.putObject(bucket, name, data.toInputStream(), data.getContentSize(), null, null, type)
                 if (!meta.isNullOrEmpty()) {
@@ -152,7 +158,7 @@ class MinioTemplate @JvmOverloads constructor(private val server: String, privat
         else false
     }
 
-    override fun exists(name: String, bucket: String): Boolean {
+    override fun isItem(name: String, bucket: String): Boolean {
         return try {
             client.statObject(bucket, name).createdTime() != null
         }
@@ -172,9 +178,19 @@ class MinioTemplate @JvmOverloads constructor(private val server: String, privat
         }
     }
 
-    override fun buckets() = client.listBuckets().asSequence().map { BucketData(it.name(), it.creationDate()) }
+    override fun bucketOf(bucket: String): BucketData? {
+        return try {
+            client.listBuckets().firstOrNull { it.name() == bucket }.let {
+                if (it == null) null else  BucketData(it.name(), it.creationDate())
+            }
+        }
+        catch (cause: Throwable) {
+            Throwables.thrown(cause)
+            null
+        }
+    }
 
-    override fun buckets(name: String) = client.listBuckets().asSequence().filter { name == it.name() }.map { BucketData(name, it.creationDate()) }
+    override fun buckets() = client.listBuckets().asSequence().map { BucketData(it.name(), it.creationDate()) }
 
     override fun buckets(test: (String) -> Boolean) = client.listBuckets().asSequence().filter { test(it.name()) }.map { BucketData(it.name(), it.creationDate()) }
 
@@ -187,7 +203,7 @@ class MinioTemplate @JvmOverloads constructor(private val server: String, privat
         }
     }
 
-    override fun itemsOf(bucket: String, recursive: Boolean,  prefix: String?) = client.listObjects(bucket, prefix, recursive).asSequence().mapNotNull { data ->
+    override fun itemsOf(bucket: String, recursive: Boolean, prefix: String?) = client.listObjects(bucket, prefix, recursive).asSequence().map { data ->
         val item = data.get()
         val file = item.isDir.not()
         ItemData(item.objectName(), bucket, item.etag()?.replace("\"", EMPTY_STRING), item.storageClass(), file, if (file) item.objectSize() else null, if (file) item.lastModified() else null, this)
@@ -208,11 +224,11 @@ class MinioTemplate @JvmOverloads constructor(private val server: String, privat
     }
     catch (cause: Throwable) {
         Throwables.thrown(cause)
-        throw MercenaryFatalExceptiion(cause)
+        throw MinioFatalExceptiion(cause)
     }
 
     override fun metaDataOf(name: String, bucket: String, meta: MetaData, merge: Boolean): Boolean {
-        if (exists(name, bucket)) {
+        if (isItem(name, bucket)) {
             try {
                 val maps = mutableMapOf("Content-Type" to statusOf(name, bucket).contentType)
                 if (merge) {
@@ -231,7 +247,7 @@ class MinioTemplate @JvmOverloads constructor(private val server: String, privat
     }
 
     override fun copyOf(name: String, bucket: String, dest: String, target: String, meta: MetaData?): Boolean {
-        return when (exists(name, bucket)) {
+        return when (isItem(name, bucket)) {
             true -> true.also {
                 when (meta.isNullOrEmpty()) {
                     true -> client.copyObject(target, dest, null, null, bucket, name, null, null)
@@ -242,15 +258,15 @@ class MinioTemplate @JvmOverloads constructor(private val server: String, privat
         }
     }
 
-    override fun hashCode() = toString().hashCode()
+    override fun hashCode() = uuid.hashCode()
 
     override fun equals(other: Any?) = when (other) {
-        is MinioTemplate -> other === this || ((serverOf() == other.serverOf()) && (access == other.access) && (secret == other.secret) && (regionOf() == other.regionOf()))
+        is MinioTemplate -> other === this || uuid == other.uuid
         else -> false
     }
 
     override fun toString(): String {
-        return "${javaClass.name}(${serverOf()}, ${regionOf()})"
+        return "${javaClass.name}(${nameOf()}, ${serverOf()}, ${regionOf()})"
     }
 
     private object MinioCopyConditions : CopyConditions() {

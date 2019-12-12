@@ -20,7 +20,7 @@ import co.mercenary.creators.kotlin.minio.*
 import co.mercenary.creators.kotlin.util.*
 import org.junit.jupiter.api.Test
 
-class MetaTest : KotlinTest(MAIN_TEST_FILE) {
+class MetaTest : KotlinTest(MAIN_TEST_PROPERTIES) {
     @Test
     fun test() {
         val base = "root"

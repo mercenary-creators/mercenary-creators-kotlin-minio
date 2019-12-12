@@ -21,25 +21,14 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import java.util.*
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-class StatusData @JvmOverloads constructor(val name: String, val bucket: String, val etag: String? = null, val file: Boolean = false, val contentSize: Long? = null, val creationTime: Date? = null, @JsonInclude(JsonInclude.Include.NON_EMPTY) val metaData: Map<String, String> = emptyMap(), private val type: String = DEFAULT_CONTENT_TYPE) : MinioDataAware<StatusData> {
-
-    private val self: ByteArray by lazy {
-        toByteArray()
-    }
+data class StatusData @JvmOverloads constructor(val name: String, val bucket: String, val etag: String? = null, val file: Boolean = false, val contentSize: Long? = null, val creationTime: Date? = null, @JsonInclude(JsonInclude.Include.NON_EMPTY) val metaData: MetaData = MetaData(0), private val type: String = DEFAULT_CONTENT_TYPE) : MinioDataAware<StatusData> {
 
     val contentType: String?
         get() = if (file) resolveContentType(name, type) else null
 
     override fun toString() = toJSONString()
 
-    override fun hashCode() = self.contentHashCode()
-
-    override fun equals(other: Any?) = when (other) {
-        is StatusData -> this === other || self contentEquals other.self
-        else -> false
-    }
-
     override fun clone() = copyOf()
 
-    override fun copyOf() = StatusData(name, bucket, etag, file, contentSize, creationTime, metaData, type)
+    override fun copyOf() = StatusData(name, bucket, etag, file, contentSize, creationTime?.copyOf(), metaData.copyOf(), type)
 }

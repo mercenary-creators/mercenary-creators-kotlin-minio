@@ -18,13 +18,17 @@ package co.mercenary.creators.kotlin.minio
 
 class MetaData private constructor(private val hash: LinkedHashMap<String, String>) : MinioDataAware<MetaData>, Map<String, String> by hash {
 
-    constructor(args: Map<String, Any>) : this(LinkedHashMap(args.size)) {
+    constructor(size: Int): this(LinkedHashMap(size))
+
+    constructor(): this(LinkedHashMap())
+
+    constructor(args: Map<String, Any>) : this(args.size) {
         for ((k, v) in args) {
             hash[meta(k)] = code(v)
         }
     }
 
-    constructor(vararg args: Pair<String, Any>) : this(LinkedHashMap(args.size)) {
+    constructor(vararg args: Pair<String, Any>) : this(args.size) {
         for ((k, v) in args) {
             hash[meta(k)] = code(v)
         }
@@ -51,10 +55,12 @@ class MetaData private constructor(private val hash: LinkedHashMap<String, Strin
 
     companion object {
 
+        const val DEFAYLT_S =16
+
         @JvmStatic
-        fun create(args: Map<String, List<String>>?): Map<String, String> {
+        fun create(args: Map<String, List<String>>?): MetaData {
             if (args.isNullOrEmpty()) {
-                return emptyMap()
+                return MetaData(0)
             }
             return LinkedHashMap<String, String>(args.size).also { hash ->
                 for ((k, v) in args) {
@@ -64,7 +70,7 @@ class MetaData private constructor(private val hash: LinkedHashMap<String, Strin
                         }
                     }
                 }
-            }
+            }.let { MetaData(it) }
         }
 
         private fun code(data: Any): String {

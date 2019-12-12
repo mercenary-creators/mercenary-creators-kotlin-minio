@@ -19,7 +19,7 @@ package co.mercenary.creators.kotlin.minio.test.main
 import co.mercenary.creators.kotlin.minio.*
 import org.junit.jupiter.api.Test
 
-class DataTest : KotlinTest(MAIN_TEST_FILE) {
+class DataTest : KotlinTest(MAIN_TEST_PROPERTIES) {
     @Test
     fun test() {
         minio.itemsOf("themodernway", true).forEach { each ->

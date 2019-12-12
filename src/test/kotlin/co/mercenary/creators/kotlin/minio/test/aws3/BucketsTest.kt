@@ -19,10 +19,14 @@ package co.mercenary.creators.kotlin.minio.test.aws3
 import co.mercenary.creators.kotlin.minio.*
 import org.junit.jupiter.api.Test
 
-class BucketsTest : KotlinTest(AWS3_TEST_FILE) {
+class BucketsTest : KotlinTest(AWS3_TEST_PROPERTIES) {
     @Test
     fun test() {
         minio.buckets().forEachIndexed { many, each ->
+            info { "%2d : %s".format(many + 1, each.toJSONString(false)) }
+        }
+        info { minio }
+        minio.buckets { it.startsWith("dean") }.forEachIndexed { many, each ->
             info { "%2d : %s".format(many + 1, each.toJSONString(false)) }
         }
     }

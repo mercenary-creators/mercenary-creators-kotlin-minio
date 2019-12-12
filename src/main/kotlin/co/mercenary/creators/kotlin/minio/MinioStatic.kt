@@ -16,6 +16,7 @@
 
 package co.mercenary.creators.kotlin.minio
 
+import co.mercenary.creators.kotlin.util.toAtomic
 import com.google.common.escape.Escaper
 import com.google.common.net.UrlEscapers
 
@@ -54,6 +55,54 @@ object MinioStatic {
                 text = it.replace(text)
             }
             text
+        }
+    }
+
+    @JvmStatic
+    fun hashOf(vararg args: Any?, accumulator: (Int) -> Unit) {
+        args.forEach { each ->
+            val hash = when (each) {
+                null -> 0
+                is Array<*> -> each.contentDeepHashCode()
+                is IntArray -> each.contentHashCode()
+                is ByteArray -> each.contentHashCode()
+                is CharArray -> each.contentHashCode()
+                is LongArray -> each.contentHashCode()
+                is ShortArray -> each.contentHashCode()
+                is FloatArray -> each.contentHashCode()
+                is DoubleArray -> each.contentHashCode()
+                is BooleanArray -> each.contentHashCode()
+                else -> each.hashCode()
+            }
+            accumulator(hash)
+        }
+    }
+
+    @JvmStatic
+    fun hashOf(vararg args: Any?): Int {
+        val hash = 1.toAtomic()
+        hashOf(*args) {
+            hash * 31 + it
+        }
+        return hash.get()
+    }
+
+    @JvmStatic
+    fun same(value: Any?, other: Any?): Boolean {
+        if (value === other) {
+            return true
+        }
+        return when (value) {
+            null -> other == null
+            is Array<*> -> if (other is Array<*>) value contentDeepEquals other else false
+            is IntArray -> if (other is IntArray) value contentEquals other else false
+            is ByteArray -> if (other is ByteArray) value contentEquals other else false
+            is CharArray -> if (other is CharArray) value contentEquals other else false
+            is LongArray -> if (other is LongArray) value contentEquals other else false
+            is ShortArray -> if (other is ShortArray) value contentEquals other else false
+            is DoubleArray -> if (other is DoubleArray) value contentEquals other else false
+            is BooleanArray -> if (other is BooleanArray) value contentEquals other else false
+            else -> value == other
         }
     }
 

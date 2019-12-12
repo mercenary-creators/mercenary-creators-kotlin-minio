@@ -19,6 +19,7 @@
 package co.mercenary.creators.kotlin.minio
 
 import co.mercenary.creators.kotlin.util.*
+import java.util.concurrent.atomic.AtomicInteger
 
 const val S3_RESOURCE_PREFIX = "s3:"
 
@@ -43,5 +44,28 @@ fun resolveContentType(path: String, type: String = DEFAULT_CONTENT_TYPE): Strin
     return type.toLowerTrim()
 }
 
-fun Iterable<String>.uniqueOf(): List<String> = mapNotNull { name -> name.trim().takeIf { take -> take.isNotEmpty() } }.distinct()
+fun Iterable<String>.uniqueOf(): List<String> = mapNotNull { toTrimOrNull(it) }.distinct()
+
+open class MinioFatalExceptiion(text: String?, root: Throwable?) : MercenaryFatalExceptiion(text, root) {
+    constructor(text: String) : this(text, null)
+    constructor(root: Throwable) : this(root.message, root)
+
+    companion object {
+        private const val serialVersionUID = 2L
+    }
+}
+
+operator fun AtomicInteger.times(value: Int): AtomicInteger {
+    updateAndGet { it * value }
+    return this
+}
+
+operator fun AtomicInteger.plus(value: Int): AtomicInteger {
+    updateAndGet { it + value }
+    return this
+}
+
+fun AtomicInteger.increment() = this.getAndIncrement()
+
+fun hashOf(vararg args: Any?): Int = MinioStatic.hashOf(*args)
 

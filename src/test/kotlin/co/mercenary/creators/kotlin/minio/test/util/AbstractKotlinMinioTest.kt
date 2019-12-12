@@ -20,7 +20,7 @@ import co.mercenary.creators.kotlin.minio.*
 import co.mercenary.creators.kotlin.util.*
 import java.util.*
 
-abstract class AbstractKotlinMinioTest @JvmOverloads constructor(private val file: String = MAIN_TEST_FILE) : AbstractKotlinTest() {
+abstract class AbstractKotlinMinioTest @JvmOverloads constructor(private val file: String = MAIN_TEST_PROPERTIES) : AbstractKotlinTest() {
 
     protected val loader = contentResourceLoader
 

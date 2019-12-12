@@ -22,6 +22,7 @@ import java.net.URL
 import java.nio.file.Path
 
 interface MinioOperations {
+    fun nameOf(): String
     fun serverOf(): String
     fun regionOf(): String
     fun traceOff(): Boolean
@@ -29,14 +30,14 @@ interface MinioOperations {
     fun loaderOn(prefix: String = MINIO_RESOURCE_PREFIX): Boolean
     fun isBucket(bucket: String): Boolean
     fun isBucket(bucket: BucketData) = isBucket(bucket.name)
-    fun bucketOf(bucket: String, lock: Boolean = false): Boolean
+    fun ensureBucket(bucket: String, lock: Boolean = false): Boolean
+    fun bucketOf(bucket: String): BucketData?
     fun buckets(): Sequence<BucketData>
-    fun buckets(name: String): Sequence<BucketData>
     fun buckets(args: Iterable<String>): Sequence<BucketData>
     fun buckets(test: (String) -> Boolean): Sequence<BucketData>
     fun buckets(test: Regex): Sequence<BucketData> = buckets { test matches it }
     fun buckets(vararg list: String): Sequence<BucketData> = buckets(list.toList())
-    fun exists(name: String, bucket: String): Boolean
+    fun isItem(name: String, bucket: String): Boolean
     fun delete(name: String, bucket: String): Boolean
     fun delete(args:  Iterable<String>, bucket: String): Boolean
     fun delete(args:  Sequence<String>, bucket: String): Boolean = delete(args.toList(), bucket)
