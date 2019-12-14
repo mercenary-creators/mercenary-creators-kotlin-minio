@@ -144,7 +144,6 @@ dependencies {
 artifacts {
     archives sourcesJar
     archives javadocJar
-    archives jar
 }
 
 signing { sign configurations.archives }
@@ -154,7 +153,7 @@ String getBuildModuleVersion() {
 }
 
 static String getProjectCommonName() {
-    'Mercenary Creators Core Kotlin'
+    'Mercenary Creators Kotlin Minio'
 }
 
 static String getBuildDate() {
@@ -206,6 +205,10 @@ static String getProjectTitle() {
     getProjectCommonName().replaceAll(' ', '-')
 }
 
+static String getBuildGITHomeSCM() {
+    'scm:git@github.com:mercenary-creators/' + getProjectArtifactID() + '.git'
+}
+
 String getRepoUploadArchives() {
     getBuildModuleVersion().endsWith('SNAPSHOT') ? 'https://oss.sonatype.org/content/repositories/snapshots/' : 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
 }
@@ -227,12 +230,12 @@ uploadArchives {
             }
             pom.project {
                 packaging 'jar'
-                description 'Mercenary Creators Kotlin.'
-                url 'https://github.com/mercenary-creators/mercenary-creators-core-kotlin'
+                description getProjectCommonName()
+                url getBuildGITHomeURL()
                 scm {
-                    url 'scm:git@github.com:mercenary-creators/mercenary-creators-core-kotlin.git'
-                    connection 'scm:git@github.com:mercenary-creators/mercenary-creators-core-kotlin.git'
-                    developerConnection 'scm:git@github.com:mercenary-creators/mercenary-creators-core-kotlin.git'
+                    url getBuildGITHomeSCM()
+                    connection getBuildGITHomeSCM()
+                    developerConnection getBuildGITHomeSCM()
                 }
                 licenses {
                     license {
