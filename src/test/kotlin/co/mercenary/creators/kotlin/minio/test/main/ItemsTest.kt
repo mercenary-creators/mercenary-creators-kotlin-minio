@@ -20,7 +20,7 @@ import co.mercenary.creators.kotlin.minio.*
 import co.mercenary.creators.kotlin.util.*
 import org.junit.jupiter.api.Test
 
-class ItemsTest : KotlinTest(MAIN_TEST_PROPERTIES) {
+class ItemsTest : KotlinTest(MAIN_TEST_PROPERTIES, MINIO_RESOURCE_PREFIX) {
     @Test
     fun test() {
         val many = 0.toAtomic()
@@ -32,8 +32,6 @@ class ItemsTest : KotlinTest(MAIN_TEST_PROPERTIES) {
         }
         info { many }
         many shouldNotBe 0
-        val flag = minio.loaderOn(MINIO_RESOURCE_PREFIX)
-        info { flag }
         val data = loader["minio://root/test.json"]
         info { data }
         data.forEachLineIndexed { size, each ->

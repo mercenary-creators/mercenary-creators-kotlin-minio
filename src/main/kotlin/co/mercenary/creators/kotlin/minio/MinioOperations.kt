@@ -17,6 +17,7 @@
 package co.mercenary.creators.kotlin.minio
 
 import co.mercenary.creators.kotlin.util.io.*
+import co.mercenary.creators.kotlin.util.toContentResource
 import java.io.*
 import java.net.URL
 import java.nio.file.Path
@@ -47,8 +48,8 @@ interface MinioOperations {
     fun metaDataOf(name: String, bucket: String): MetaData
     fun metaDataOf(name: String, bucket: String, meta: MetaData, merge: Boolean = false): Boolean
     fun save(name: String, bucket: String, data: ContentResource, meta: MetaData? = null): Boolean
-    fun save(name: String, bucket: String, data: URL, meta: MetaData? = null): Boolean = save(name, bucket, URLContentResource(data), meta)
-    fun save(name: String, bucket: String, data: File, meta: MetaData? = null): Boolean = save(name, bucket, FileContentResource(data), meta)
-    fun save(name: String, bucket: String, data: Path, meta: MetaData? = null): Boolean = save(name, bucket, FileContentResource(data.toFile()), meta)
+    fun save(name: String, bucket: String, data: URL, meta: MetaData? = null): Boolean = save(name, bucket, data.toContentResource(), meta)
+    fun save(name: String, bucket: String, data: File, meta: MetaData? = null): Boolean = save(name, bucket, data.toContentResource(), meta)
+    fun save(name: String, bucket: String, data: Path, meta: MetaData? = null): Boolean = save(name, bucket, data.toContentResource(), meta)
     fun copyOf(name: String, bucket: String, dest: String = name, target: String = bucket, meta: MetaData? = null): Boolean
 }

@@ -55,8 +55,6 @@ class MetaData private constructor(private val hash: LinkedHashMap<String, Strin
 
     companion object {
 
-        const val DEFAYLT_S =16
-
         @JvmStatic
         fun create(args: Map<String, List<String>>?): MetaData {
             if (args.isNullOrEmpty()) {
@@ -83,6 +81,4 @@ class MetaData private constructor(private val hash: LinkedHashMap<String, Strin
 
         private fun test(meta: String) = meta.toLowerCase().regionMatches(0, X_AMAZON_META_HEADER_START, 0, X_AMAZON_META_HEADER_START.length)
     }
-
-
 }

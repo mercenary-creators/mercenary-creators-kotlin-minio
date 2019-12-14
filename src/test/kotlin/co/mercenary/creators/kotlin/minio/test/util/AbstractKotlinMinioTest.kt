@@ -20,7 +20,7 @@ import co.mercenary.creators.kotlin.minio.*
 import co.mercenary.creators.kotlin.util.*
 import java.util.*
 
-abstract class AbstractKotlinMinioTest @JvmOverloads constructor(private val file: String = MAIN_TEST_PROPERTIES) : AbstractKotlinTest() {
+abstract class AbstractKotlinMinioTest @JvmOverloads constructor(private val file: String = MAIN_TEST_PROPERTIES, private val path: String? = null) : AbstractKotlinTest() {
 
     protected val loader = contentResourceLoader
 
@@ -31,7 +31,11 @@ abstract class AbstractKotlinMinioTest @JvmOverloads constructor(private val fil
     }
 
     private val template: MinioTemplate by lazy {
-        MinioTemplate(getConfigProperty("co.mercenary.creators.minio.server-url"), getConfigProperty("co.mercenary.creators.minio.access-key"), getConfigProperty("co.mercenary.creators.minio.secret-key"))
+        MinioTemplate(getConfigProperty("co.mercenary.creators.minio.server-url"), getConfigProperty("co.mercenary.creators.minio.access-key"), getConfigProperty("co.mercenary.creators.minio.secret-key")).also {
+            if (path != null) {
+                it.loaderOn(path)
+            }
+        }
     }
 
     protected val minio: MinioOperations

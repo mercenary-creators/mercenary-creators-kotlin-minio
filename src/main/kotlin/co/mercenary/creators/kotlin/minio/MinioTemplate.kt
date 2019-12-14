@@ -89,7 +89,7 @@ class MinioTemplate @JvmOverloads constructor(private val server: String, privat
     }
 
     override fun delete(args: Iterable<String>, bucket: String): Boolean {
-        return args.uniqueOf().let { list ->
+        return args.uniqueTrimmedOf().let { list ->
             try {
                 val good = mutableSetOf<String>()
                 client.removeObjects(bucket, list).forEach {
@@ -195,7 +195,7 @@ class MinioTemplate @JvmOverloads constructor(private val server: String, privat
     override fun buckets(test: (String) -> Boolean) = client.listBuckets().asSequence().filter { test(it.name()) }.map { BucketData(it.name(), it.creationDate()) }
 
     override fun buckets(args: Iterable<String>): Sequence<BucketData> {
-        val look = args.uniqueOf()
+        val look = args.uniqueTrimmedOf()
         return when (look.size) {
             0 -> emptySequence()
             1 -> look[0].let { name -> client.listBuckets().asSequence().filter { name == it.name() }.map { BucketData(name, it.creationDate()) } }

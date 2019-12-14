@@ -16,7 +16,7 @@
 
 package co.mercenary.creators.kotlin.minio
 
-import co.mercenary.creators.kotlin.util.toAtomic
+import co.mercenary.creators.kotlin.util.*
 import com.google.common.escape.Escaper
 import com.google.common.net.UrlEscapers
 

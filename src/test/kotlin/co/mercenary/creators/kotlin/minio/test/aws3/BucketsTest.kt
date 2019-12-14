@@ -25,9 +25,9 @@ class BucketsTest : KotlinTest(AWS3_TEST_PROPERTIES) {
         minio.buckets().forEachIndexed { many, each ->
             info { "%2d : %s".format(many + 1, each.toJSONString(false)) }
         }
-        info { minio }
         minio.buckets { it.startsWith("dean") }.forEachIndexed { many, each ->
             info { "%2d : %s".format(many + 1, each.toJSONString(false)) }
         }
+        info { minio }
     }
 }

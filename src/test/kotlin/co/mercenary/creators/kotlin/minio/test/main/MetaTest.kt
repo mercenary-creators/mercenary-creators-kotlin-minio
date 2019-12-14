@@ -28,7 +28,7 @@ class MetaTest : KotlinTest(MAIN_TEST_PROPERTIES) {
         minio.traceOn()
         minio.save(name, base, TodoData.link())
         info { minio.statusOf(name, base) }
-        minio.metaDataOf(name, base, MetaData("name_   " to "test_   "))
+        minio.metaDataOf(name, base, MetaData("name" to "dean"))
         info { minio.statusOf(name, base) }
         val many = 0.toAtomic()
         minio.itemsOf(base).forEach { each ->
