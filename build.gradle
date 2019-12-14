@@ -259,8 +259,8 @@ List<String> getJavaDocLinks() {
     def list = []
     def data = project.file('config/javadoc/JAVADOC_LINK_SITES.txt')
     if (data.exists()) {
-        data.eachLine { line ->
-            list << line
+        data.eachLine {
+            list << it
         }
     }
     list
