@@ -30,17 +30,7 @@ const val X_AMAZON_META_HEADER_START = "x-amz-meta-"
 
 @JvmOverloads
 fun resolveContentType(path: String, type: String = DEFAULT_CONTENT_TYPE): String {
-    if (isDefaultContentType(type)) {
-        val name = path.toLowerTrim()
-        if (name.endsWith(".kt")) {
-            return "text/x-kotlin-source"
-        }
-        if (name.endsWith(".kts")) {
-            return "text/x-kotlin-script"
-        }
-        return getDefaultContentTypeProbe().getContentType(path, type)
-    }
-    return type.toLowerTrim()
+    return if (isDefaultContentType(type)) getDefaultContentTypeProbe().getContentType(path, type) else type.toLowerTrim()
 }
 
 open class MinioFatalExceptiion(text: String?, root: Throwable?) : MercenaryFatalExceptiion(text, root) {

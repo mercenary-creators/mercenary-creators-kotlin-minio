@@ -18,9 +18,9 @@ package co.mercenary.creators.kotlin.minio
 
 class MetaData private constructor(private val hash: LinkedHashMap<String, String>) : MinioDataAware<MetaData>, Map<String, String> by hash {
 
-    constructor(size: Int): this(LinkedHashMap(size))
-
     constructor(): this(LinkedHashMap())
+
+    constructor(size: Int): this(LinkedHashMap(size))
 
     constructor(args: Map<String, Any>) : this(args.size) {
         for ((k, v) in args) {
@@ -54,6 +54,8 @@ class MetaData private constructor(private val hash: LinkedHashMap<String, Strin
     override fun copyOf() = MetaData(LinkedHashMap(hash))
 
     companion object {
+
+        const val X_AMAZON_META_HEADER_START = "x-amz-meta-"
 
         @JvmStatic
         fun create(args: Map<String, List<String>>?): MetaData {

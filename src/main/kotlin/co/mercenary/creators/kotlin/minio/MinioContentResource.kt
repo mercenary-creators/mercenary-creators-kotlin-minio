@@ -21,13 +21,16 @@ import com.fasterxml.jackson.annotation.JsonIgnoreType
 
 @JsonIgnoreType
 class MinioContentResource(data: ByteArray, path: String, private val type: String, time: Long) : AbstractContentResourceBase(path, type, time), CachedContentResource {
+
     private val save = data.copyOf()
+
     override fun getContentData() = save.copyOf()
+
     override fun getInputStream() = save.inputStream()
+
     override fun getContentSize() = save.size.toLong()
-    override fun getContentType(): String {
-        return resolveContentType(getContentPath(), type)
-    }
+
+    override fun getContentType() = resolveContentType(getContentPath(), type)
 
     override fun toString() = getDescription()
 
